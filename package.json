@@ -1,0 +1,11 @@
+{
+  "name": "echo-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:frontend": "cd apps/frontend && npm run dev",
+    "build:frontend": "cd apps/frontend && npm run build"
+  }
+}
