@@ -17,7 +17,7 @@ interface Canvas {
   canvas: HTMLCanvasElement;
 }
 
-interface FractalParams {
+export interface FractalParams {
   variationFunctions: Array<(p: Point) => Point>;
   functionWeights: number[];
   colorParams: {
@@ -59,7 +59,8 @@ const createChaosCanvas = (canvas: HTMLCanvasElement): Canvas => {
 const renderFlameFractal = (
   canvas: HTMLCanvasElement,
   params: FractalParams,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
+  totalIterationsOverride: number = 1000000
 ): Promise<FractalPoint[]> => {
   // Initialize the canvas
   const chaos = createChaosCanvas(canvas);
@@ -75,10 +76,10 @@ const renderFlameFractal = (
   const displayHeight = canvas.height / dpr;
   
   const scale = Math.min(displayWidth, displayHeight) / 2;
-  const pointSize = 0.5 / scale;
+  const pointSize = 0.6 / scale;
   
-  // Center the coordinate system
-  chaos.context.translate(displayWidth / 2, displayHeight / 2);
+  // Center the coordinate system (use physical pixel center to account for HiDPI)
+  chaos.context.translate(canvas.width / 2, canvas.height / 2);
   chaos.context.scale(scale, -scale);  // Flip y-axis
 
   const { variationFunctions, functionWeights, colorParams, transforms } = params;
@@ -109,12 +110,17 @@ const renderFlameFractal = (
   };
 
   // Main rendering loop
-  const totalIterations = 1000000;  // Adjust based on desired detail
-  const drawCount = 10000;
+  const totalIterations = totalIterationsOverride;  // Adjust based on desired detail
+  const drawCount = 1000; // Reduced from 10000 for more frequent updates
   let iteration = 0;
+  let lastProgressUpdate = 0;
+  const MIN_PROGRESS_UPDATE_INTERVAL = 16; // ~60fps
 
   return new Promise((resolve) => {
     function renderLoop() {
+      const now = performance.now();
+      const shouldUpdateProgress = now - lastProgressUpdate >= MIN_PROGRESS_UPDATE_INTERVAL;
+
       for (let i = 0; i < drawCount && iteration < totalIterations; i++) {
         // Apply random transform
         const [transform, colorIndex] = getRandomTransform(table);
@@ -136,10 +142,11 @@ const renderFlameFractal = (
         iteration++;
       }
 
-      // Update progress
-      const progress = (iteration / totalIterations) * 100;
-      if (onProgress) {
+      // Update progress with throttling
+      if (shouldUpdateProgress && onProgress) {
+        const progress = (iteration / totalIterations) * 100;
         onProgress(progress);
+        lastProgressUpdate = now;
       }
 
       if (iteration < totalIterations) {
@@ -187,7 +194,12 @@ function getRandomTransform(table: Array<[(p: Point) => Point, number, number]>)
 
 function getColor(colorIndex: number, colorParams: FractalParams['colorParams'], point: Point): string {
   const { baseColor, colorSpeed, colorShift } = colorParams;
-  const hue = (baseColor[0] + colorSpeed[0] * point.x + colorShift[0] * point.y) % 360;
+  // Give each transform / branch a distinct hue by spacing them evenly around the wheel
+  const HUE_SPACING = 360 / 8; // NOTE: 8 == transformCount; adjust if you change that constant
+  const indexHueShift = colorIndex * HUE_SPACING;
+  const hue = (baseColor[0] +
+    indexHueShift +
+    colorSpeed[0] * point.x + colorShift[0] * point.y) % 360;
   const saturation = Math.min(100, Math.max(0, baseColor[1] + colorSpeed[1] * point.x + colorShift[1] * point.y));
   const lightness = Math.min(100, Math.max(0, baseColor[2] + colorSpeed[2] * point.x + colorShift[2] * point.y));
   return `hsla(${hue}, ${saturation}%, ${lightness}%, 0.5)`;
@@ -305,12 +317,30 @@ const createFractalParamsFromEmbeddings = (embeddings: number[]) => {
   for (let i = 0; i < transformCount; i++) {
     // Spread indices so we use the whole embedding vector
     const base = 8 + i * 6;
-    const a = clip(embeddings[(base) % len] * 1.8, -2, 2);
-    const b = clip(embeddings[(base + 1) % len] * 1.8, -2, 2);
+    let a = clip(embeddings[(base) % len] * 1.8, -2, 2);
+    let b = clip(embeddings[(base + 1) % len] * 1.8, -2, 2);
     const c = embeddings[(base + 2) % len]; // translation small
-    const d = clip(embeddings[(base + 3) % len] * 1.8, -2, 2);
-    const e = clip(embeddings[(base + 4) % len] * 1.8, -2, 2);
+    let d = clip(embeddings[(base + 3) % len] * 1.8, -2, 2);
+    let e = clip(embeddings[(base + 4) % len] * 1.8, -2, 2);
     const f = embeddings[(base + 5) % len];
+
+    // Ensure the linear part of the transform is not too close to singular (or degenerate)
+    const DET_MIN = 0.1;
+    const EPS = 1e-6;
+    const det = Math.abs(a * e - b * d);
+    if (det < DET_MIN) {
+      const boost = Math.sqrt((DET_MIN + EPS) / (det + EPS));
+      a *= boost;
+      b *= boost;
+      d *= boost;
+      e *= boost;
+      // Re-clip to the original coefficient bounds in case the boost pushed us too far
+      a = clip(a, -2, 2);
+      b = clip(b, -2, 2);
+      d = clip(d, -2, 2);
+      e = clip(e, -2, 2);
+    }
+
     transforms.push(createAffineTransform(a, b, c, d, e, f));
   }
 
@@ -360,6 +390,5 @@ export {
   horseshoe,
   polar,
   handkerchief,
-  disc,
-  type FractalParams
+  disc
 }; 

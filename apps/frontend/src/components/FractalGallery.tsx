@@ -1,7 +1,7 @@
 import { useFractal } from '../context/FractalContext';
 
 export default function FractalGallery() {
-  const { gallery, handleDeleteItem, displayGalleryItem, currentGalleryIndex } = useFractal();
+  const { gallery, handleDeleteItem, displayGalleryItem, currentGalleryIndex, isLoading } = useFractal();
 
   if (gallery.length === 0) return null;
 
@@ -14,9 +14,15 @@ export default function FractalGallery() {
             <img
               src={item.src}
               alt={`Fractal ${idx}`}
-              draggable
-              onDragStart={(e) => e.dataTransfer.setData('text/plain', idx.toString())}
-              onClick={() => displayGalleryItem(idx)}
+              draggable={!isLoading}
+              onDragStart={(e) => {
+                if (isLoading) return;
+                e.dataTransfer.setData('text/plain', idx.toString());
+              }}
+              onClick={() => {
+                if (isLoading) return;
+                displayGalleryItem(idx);
+              }}
             />
             {item.text && <div className="gallery-text-overlay">{item.text}</div>}
             <button

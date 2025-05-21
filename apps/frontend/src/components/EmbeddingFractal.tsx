@@ -3,15 +3,15 @@ import FractalControls from './FractalControls';
 import FractalCanvas from './FractalCanvas';
 import FractalGallery from './FractalGallery';
 import SelectedFractals from './SelectedFractals';
+import ComparisonMetrics from './ComparisonMetrics';
 import './EmbeddingFractal.css';
-import ComparisonCanvas from './ComparisonCanvas';
 import { useFractal } from '../context/FractalContext';
 import { useEffect } from 'react';
+import ToastContainer from './ToastContainer';
 
 // Inner component that uses the context
 function FractalLayout() {
   const {
-    selectedForComparison,
     canvasRef,
     gallery,
     currentGalleryIndex,
@@ -44,11 +44,6 @@ function FractalLayout() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gallery.length, currentGalleryIndex, displayGalleryItem]);
 
-  // Determine dimensions for the comparison canvas
-  // Default or use dimensions from the main canvas if available
-  const mainCanvasWidth = canvasRef.current?.width ?? 512;
-  const mainCanvasHeight = canvasRef.current?.height ?? 512;
-
   return (
     <div className="embedding-fractal">
       <div className="fractal-main">
@@ -57,12 +52,7 @@ function FractalLayout() {
       </div>
       <FractalGallery />
       <SelectedFractals />
-      <ComparisonCanvas
-        fractalA={selectedForComparison[0] ?? null}
-        fractalB={selectedForComparison[1] ?? null}
-        width={mainCanvasWidth}
-        height={mainCanvasHeight}
-      />
+      <ComparisonMetrics />
     </div>
   );
 }
@@ -71,6 +61,7 @@ export default function EmbeddingFractal() {
   return (
     <FractalProvider>
       <FractalLayout />
+      <ToastContainer />
     </FractalProvider>
   );
 } 

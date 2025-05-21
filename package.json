@@ -7,5 +7,9 @@
   "scripts": {
     "dev:frontend": "cd apps/frontend && npm run dev",
     "build:frontend": "cd apps/frontend && npm run build"
+  },
+  "dependencies": {
+    "dexie": "^4.0.11",
+    "dexie-react-hooks": "^1.1.7"
   }
 }

@@ -2,10 +2,11 @@ import { useFractal } from '../context/FractalContext';
 import type { GalleryItem } from '../context/FractalContext';
 
 export default function SelectedFractals() {
-  const { gallery, selectedForComparison, setSelectedForComparison } = useFractal();
+  const { gallery, selectedForComparison, setSelectedForComparison, isLoading } = useFractal();
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    if (isLoading) return;
     const idxStr = e.dataTransfer.getData('text/plain');
     const idx = parseInt(idxStr, 10);
     if (isNaN(idx)) return;
@@ -32,7 +33,7 @@ export default function SelectedFractals() {
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
-      <h3>Compare Echoes (max 2)</h3>
+      <h3>Compare 2 Echoes</h3>
       {selectedForComparison.length === 0 && (
         <p style={{ color: '#bbb', fontSize: '0.9rem' }}>
           Drag up to two Echoes here
@@ -42,6 +43,7 @@ export default function SelectedFractals() {
         {selectedForComparison.map((item) => (
           <div key={item.src} className="gallery-item">
             <img src={item.src} alt="Selected fractal" />
+            {item.text && <div className="gallery-text-overlay">{item.text}</div>}
             <button
               className="delete-button"
               onClick={(e) => handleRemove(item.src, e)}
