@@ -4,6 +4,7 @@ import FractalCanvas from './FractalCanvas';
 import FractalGallery from './FractalGallery';
 import SelectedFractals from './SelectedFractals';
 import ComparisonMetrics from './ComparisonMetrics';
+import CommonCoreFractal from './CommonCoreFractal';
 import './EmbeddingFractal.css';
 import { useFractal } from '../context/FractalContext';
 import { useEffect } from 'react';
@@ -53,6 +54,7 @@ function FractalLayout() {
       <FractalGallery />
       <SelectedFractals />
       <ComparisonMetrics />
+      <CommonCoreFractal />
     </div>
   );
 }
