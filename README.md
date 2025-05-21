@@ -1,100 +1,60 @@
-# Fractal Point Cloud Worker
+# Echo — Semantic Embedding Fractal Explorer
 
-Cloudflare Worker for handling fractal point cloud data storage and processing.
+> *Turn text into geometry and watch meaning come alive.*
 
-## Features
+Echo is a **100 % client-side** React + Vite playground that converts an OpenAI embedding vector into a flame-fractal and renders it in real time on an HTML canvas.  The fractal acts as a _3-dimensional projection_ of the high-dimensional semantic space, allowing you to _see_ how two phrases relate by comparing shapes, colours and density.
 
-- Stores fractal point cloud data in Cloudflare D1 database
-- Generates unique IDs for each point cloud dataset
-- Retrieves point cloud data by ID
-- Provides point cloud comparison and overlap rendering
-- CORS-enabled for frontend access
+---
 
-## Setup Instructions
+## How it works
 
-1. Create the D1 database:
+1. **Embedding**  – When you enter a piece of text we call the `text-embedding-3-small` model to obtain a 64-D vector that situates the text in OpenAI's semantic space.
+2. **Dimensional reduction** – The vector is normalised and sliced into groups of coefficients which feed directly into the parameters of an *Iterated Function System* (IFS):
+   * Affine transform matrix entries (⟨a,b,c,d,e,f⟩)
+   * Variation function weights (linear, sinusoidal, swirl, polar, …)
+   * Colour‐space dynamics (H,S,L deltas)
+   This mapping collapses the 64 numbers down to **3 conceptually orthogonal sets** → position, distortion & colour.  In effect we have projected the semantic vector onto a 3-axis visual basis.
+3. **Rendering** – A million points are iteratively sampled through the IFS and plotted on an HTML canvas (see `src/utils/flameFractal.ts`).  The point cloud is eventually perceived as a *3-D object* because of the density fall-off and colour modulation.
+
+The result: two semantically similar inputs produce fractals with visibly overlapping skeletons, while unrelated phrases diverge dramatically.
+
+---
+
+## Quick start
+
 ```bash
-npx wrangler d1 create fractal_points_db
+# 1. install root dependencies (monorepo workspace)
+npm install
+
+# 2. run the Vite dev server
+npm run dev:frontend
 ```
 
-2. Take the database ID from the command output and update it in `wrangler.toml`
+Then open `http://localhost:5173` and start typing in the **Fractal Controls** panel.
 
-3. Apply the database schema:
-```bash
-npx wrangler d1 execute fractal_points_db --file=./schema.sql
+### Environment variables
+
+Echo is frontend-only, so your key has to be exposed to the browser.  For hobby projects this is fine, but remember **anyone inspecting network traffic will see it**.  If that is a concern, proxy the call through a private backend instead.
+
+---
+
+## Repository layout
+
 ```
+apps/
+  frontend/           # React + Typescript source
+    src/
+      components/     # UI & canvas widgets
+      context/        # Global fractal state via React context
+      utils/          # Embedding fetch, IFS maths, similarity metrics
+```  
+Top-level scripts (`package.json`) just cd into `apps/frontend`.
 
-4. Deploy the worker:
-```bash
-npx wrangler deploy
-```
+---
 
-## API Endpoints
+## FAQ
 
-### Store Point Cloud Data
-- **URL**: `/store`
-- **Method**: `POST`
-- **Body**: 
-```json
-{
-  "pointCloud": [...] // Point cloud data array
-}
-```
-- **Response**: 
-```json
-{
-  "id": "unique-uuid" // UUID for retrieving the data later
-}
-```
+**Is this really 3-D?**  Technically the canvas is 2-D but the intensity/colour gradient encodes a Z-axis, giving an illusion of depth.  Swap the renderer for WebGL or p5.js if you need true XYZ points.
 
-### Retrieve Point Cloud Data
-- **URL**: `/retrieve/:id`
-- **Method**: `GET`
-- **Response**: 
-```json
-{
-  "id": "unique-uuid",
-  "pointCloud": [...], // Point cloud data array
-  "createdAt": "timestamp"
-}
-```
+---
 
-### Compare Point Clouds
-- **URL**: `/compare`
-- **Method**: `POST`
-- **Body**:
-```json
-{
-  "pointCloudId1": "uuid-of-first-point-cloud",
-  "pointCloudId2": "uuid-of-second-point-cloud",
-  "threshold": 0.01 // Optional: distance threshold for overlap detection
-}
-```
-- **Response**:
-```json
-{
-  "pointCloudId1": "uuid-of-first-point-cloud",
-  "pointCloudId2": "uuid-of-second-point-cloud",
-  "threshold": 0.01,
-  "overlapCount": 42, // Number of overlapping points found
-  "renderingData": {
-    "points": [...], // Data for rendering the overlap
-    "metadata": {
-      "count": 42,
-      "averageDistance": 0.005
-    }
-  }
-}
-```
-
-## Local Development
-
-Run the worker locally:
-```bash
-npx wrangler dev
-```
-
-## Future Features
-
-- Overlap rendering logic
-- Point cloud comparison functionality
