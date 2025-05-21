@@ -32,10 +32,6 @@ npm run dev:frontend
 
 Then open `http://localhost:5173` and start typing in the **Fractal Controls** panel.
 
-### Environment variables
-
-Echo is frontend-only, so your key has to be exposed to the browser.  For hobby projects this is fine, but remember **anyone inspecting network traffic will see it**.  If that is a concern, proxy the call through a private backend instead.
-
 ---
 
 ## Repository layout
