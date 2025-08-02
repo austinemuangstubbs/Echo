@@ -81,16 +81,6 @@ The flame algorithm is _continuous_ with respect to its parameters – perfect f
 
 ---
 
-## 6 Open problems / future work
-
-1. WebGL instanced-points shader (100 × throughput)
-2. Local embedding-models (Transformer.js) to remove the OpenAI dependency
-3. Spatial hash → interactive zoom & pan at 60 fps
-4. Export structured point-cloud (`PLY`) for 3-D printing
-
----
-
-## 7 Acknowledgements
+## 6 Acknowledgements
 
 Inspired by Scott Draves’ _Flame algorithm_ and Jonathan McCabe’s colour-cycling tricks.  
-Embedding visualisation idea sparked by [Karpathy tweet, 2024-05-07].
